@@ -101,6 +101,22 @@ function getindex(f::Rawfile,x::UnitRange,y)
   matrix
 end
 
+function getindex(f::Rawfile,x::UnitRange, y, z)
+  fd = open(f.filename*f.extRaw,"r")
+
+  data = zeros(f.dtype, (length(x),length(y),length(z)))
+  for r=1:length(z)
+    for l=1:length(y)
+      seek(fd, (((z[r]-1)*f.size[2] + (y[l]-1))*f.size[1] + x[1] - 1 )*sizeof(f.dtype))
+      data[:,l,r] = read(fd, f.dtype, length(x))
+    end
+  end
+
+  close(fd)
+  data
+end
+
+
 
 function setindex!(f::Rawfile, A,::Colon,::Colon)
   f[] = A
