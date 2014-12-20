@@ -1,6 +1,7 @@
 module RawFile
 
 using IniFile
+using ProgressMeter
 
 import Base: size, ndims, read, get, setindex!, getindex
 
@@ -92,9 +93,11 @@ function getindex(f::Rawfile,x::UnitRange,y)
   fd = open(f.filename*f.extRaw,"r")
 
   matrix = zeros(f.dtype, (length(x),length(y)))
+  p = Progress(length(y), 1, "Loading data...")
   for l=1:length(y)
     seek(fd, ((y[l]-1)*f.size[1] + x[1] - 1 )*sizeof(f.dtype))
     matrix[:,l] = read(fd, f.dtype, length(x))
+    next!(p)
   end
 
   close(fd)
@@ -105,11 +108,13 @@ function getindex(f::Rawfile,x::UnitRange, y, z)
   fd = open(f.filename*f.extRaw,"r")
 
   data = zeros(f.dtype, (length(x),length(y),length(z)))
+  p = Progress(length(z), 1, "Loading data...")
   for r=1:length(z)
     for l=1:length(y)
       seek(fd, (((z[r]-1)*f.size[2] + (y[l]-1))*f.size[1] + x[1] - 1 )*sizeof(f.dtype))
       data[:,l,r] = read(fd, f.dtype, length(x))
     end
+    next!(p)
   end
 
   close(fd)
