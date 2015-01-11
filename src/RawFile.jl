@@ -2,6 +2,7 @@ module RawFile
 
 using IniFile
 using ProgressMeter
+using Docile
 
 import Base: size, ndims, read, get, setindex!, getindex
 
