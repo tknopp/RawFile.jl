@@ -53,7 +53,15 @@ function read_srm(f::Rawfile)
   ini = Inifile()
   read(ini, f.filename*f.extHeader)
   f.size = int(split(get(ini,"size"),","))
-  f.dtype = eval(symbol( get(ini,"datatype") ))
+  # The following is due to type aliases
+  dtypestr = get(ini,"datatype")
+  if dtypestr == "Complex{Float64}"
+    f.dtype = Complex128
+  elseif dtypestr == "Complex{Float32}"
+    f.dtype = Complex64
+  else
+    f.dtype = eval(symbol( get(ini,"datatype") ))
+  end
 end
 
 
