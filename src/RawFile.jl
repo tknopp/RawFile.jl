@@ -97,12 +97,16 @@ function getindex(f::Rawfile,::Colon,::Colon)
    f[]
 end
 
+function getindex(f::Rawfile,x::Colon,args...)
+  f[1:size(f, 1),args...]
+end
+
 function getindex(f::Rawfile,x::UnitRange,y)
   filename = f.filename*f.extRaw
   fd = open(filename,"r")
 
   matrix = zeros(f.dtype, (length(x),length(y)))
-  p = Progress(length(y), 1, "Loading data from "*filename*" ...")
+  p = Progress(length(y), 1, "Loading data from $filename...")
   for l=1:length(y)
     seek(fd, ((y[l]-1)*f.size[1] + x[1] - 1 )*sizeof(f.dtype))
     matrix[:,l] = read(fd, f.dtype, length(x))
@@ -118,7 +122,7 @@ function getindex(f::Rawfile,x::UnitRange, y, z)
   fd = open(filename,"r")
 
   data = zeros(f.dtype, (length(x),length(y),length(z)))
-  p = Progress(length(z), 1, "Loading data from "*filename*" ...")
+  p = Progress(length(z), 1, "Loading data from $filename...")
   for r=1:length(z)
     for l=1:length(y)
       seek(fd, (((z[r]-1)*f.size[2] + (y[l]-1))*f.size[1] + x[1] - 1 )*sizeof(f.dtype))
@@ -131,10 +135,12 @@ function getindex(f::Rawfile,x::UnitRange, y, z)
   data
 end
 
-
-
 function setindex!(f::Rawfile, A,::Colon,::Colon)
   f[] = A
+end
+
+function setindex!(f::Rawfile,x::Colon,args...)
+  setindex!(f,1:size(f, 1),args...)
 end
 
 function setindex!(f::Rawfile, A, x::UnitRange, y)
