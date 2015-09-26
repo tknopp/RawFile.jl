@@ -1,21 +1,22 @@
+VERSION >= v"0.4.0-dev+6521" && __precompile__()
+
 module RawFile
 
 using IniFile
 using ProgressMeter
-using Docile
 
 import Base: size, ndims, read, get, setindex!, getindex
 
 export Rawfile, read_raw, write_raw
 
 type Rawfile
-  filename::String
-  extRaw::String
-  extHeader::String
+  filename::AbstractString
+  extRaw::AbstractString
+  extHeader::AbstractString
   dtype
   size
 
-  function Rawfile(filename::String; extRaw=".dat", extHeader=".srm")
+  function Rawfile(filename::AbstractString; extRaw=".dat", extHeader=".srm")
     s = split(filename,".")
     if length(s) == 1
       fileWithoutExt = filename
@@ -30,7 +31,7 @@ type Rawfile
     f
   end
 
-  function Rawfile(filename::String, dtype, size; extRaw=".dat", extHeader=".srm")
+  function Rawfile(filename::AbstractString, dtype, size; extRaw=".dat", extHeader=".srm")
     f = Rawfile(filename, extRaw = extRaw, extHeader = extHeader)
     f.size = size
     f.dtype = dtype
@@ -38,13 +39,13 @@ type Rawfile
   end
 end
 
-function read_raw(filename::String; extRaw=".dat", extHeader=".srm")
+function read_raw(filename::AbstractString; extRaw=".dat", extHeader=".srm")
   f = Rawfile(filename, extRaw = extRaw, extHeader = extHeader)
   read_srm(f)
   f[]
 end
 
-function write_raw(filename::String, x; extRaw=".dat", extHeader=".srm")
+function write_raw(filename::AbstractString, x; extRaw=".dat", extHeader=".srm")
   f = Rawfile(filename, extRaw = extRaw, extHeader = extHeader)
   f[] = x
 end
@@ -98,12 +99,16 @@ function getindex(f::Rawfile,::Colon,::Colon)
    f[]
 end
 
+function getindex(f::Rawfile,x::Colon,args...)
+  f[1:size(f, 1),args...]
+end
+
 function getindex(f::Rawfile,x::UnitRange,y)
   filename = f.filename*f.extRaw
   fd = open(filename,"r")
 
   matrix = zeros(f.dtype, (length(x),length(y)))
-  p = Progress(length(y), 1, "Loading data from "*filename*" ...")
+  p = Progress(length(y), 1, "Loading data from $filename...")
   for l=1:length(y)
     seek(fd, ((y[l]-1)*f.size[1] + x[1] - 1 )*sizeof(f.dtype))
     matrix[:,l] = read(fd, f.dtype, length(x))
@@ -119,7 +124,7 @@ function getindex(f::Rawfile,x::UnitRange, y, z)
   fd = open(filename,"r")
 
   data = zeros(f.dtype, (length(x),length(y),length(z)))
-  p = Progress(length(z), 1, "Loading data from "*filename*" ...")
+  p = Progress(length(z), 1, "Loading data from $filename...")
   for r=1:length(z)
     for l=1:length(y)
       seek(fd, (((z[r]-1)*f.size[2] + (y[l]-1))*f.size[1] + x[1] - 1 )*sizeof(f.dtype))
@@ -132,10 +137,12 @@ function getindex(f::Rawfile,x::UnitRange, y, z)
   data
 end
 
-
-
 function setindex!(f::Rawfile, A,::Colon,::Colon)
   f[] = A
+end
+
+function setindex!(f::Rawfile,x::Colon,args...)
+  setindex!(f,1:size(f, 1),args...)
 end
 
 function setindex!(f::Rawfile, A, x::UnitRange, y)
