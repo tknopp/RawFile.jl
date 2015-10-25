@@ -1,5 +1,5 @@
 VERSION >= v"0.4.0-dev+6521" && __precompile__()
-VERSION <= v"0.3.11" && (AbstractString=String)
+VERSION < v"0.4.0" && (AbstractString=String)
 
 module RawFile
 
